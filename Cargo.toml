@@ -1,0 +1,9 @@
+[package]
+name = "lucy_layershell"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+iced = { version = "0.14.0", features = ["image", "tokio", "canvas"] }
+iced_layershell = "0.14.2"
+rand = "0.9.2"
