@@ -30,6 +30,8 @@ struct FallingImage {
     y: f32,
     size: f32,
     speed: f32,
+    rotation_angle: f32, // Added for current rotation
+    rotation_speed: f32, // Added for rotation speed
 }
 
 struct LucyWindow {
@@ -86,13 +88,16 @@ fn update(state: &mut LucyWindow, message: Message) -> Task<Message> {
                         y: -150.0,
                         size: rng.random_range(60.0..120.0),
                         speed: rng.random_range(150.0..400.0),
+                        rotation_angle: rng.random_range(0.0..std::f32::consts::TAU), // Initialize with a random angle
+                        rotation_speed: rng.random_range(-0.5..0.5), // Random slow rotation speed
                     });
                 }
             }
 
-            // Update positions
+            // Update positions and rotations
             for img in &mut state.falling_images {
                 img.y += img.speed * 0.016;
+                img.rotation_angle += img.rotation_speed * 0.016;
             }
 
             // Remove off-screen
@@ -122,15 +127,25 @@ impl Program<Message> for LucyWindow {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
         for falling in &self.falling_images {
-            frame.draw_image(
-                Rectangle {
-                    x: falling.x - falling.size / 2.0,
-                    y: falling.y - falling.size / 2.0,
-                    width: falling.size,
-                    height: falling.size,
-                },
-                CanvasImage::new(self.image_handle.clone()),
-            );
+            // Save the current frame state
+            frame.with_save(|frame| {
+                // Translate to the center of the image for rotation
+                frame.translate(iced::Vector::new(falling.x, falling.y));
+                // Rotate by the current angle
+                frame.rotate(falling.rotation_angle);
+                // Translate back to draw the image centered
+                frame.translate(iced::Vector::new(-falling.x, -falling.y));
+
+                frame.draw_image(
+                    Rectangle {
+                        x: falling.x - falling.size / 2.0,
+                        y: falling.y - falling.size / 2.0,
+                        width: falling.size,
+                        height: falling.size,
+                    },
+                    CanvasImage::new(self.image_handle.clone()),
+                );
+            });
         }
 
         vec![frame.into_geometry()]
